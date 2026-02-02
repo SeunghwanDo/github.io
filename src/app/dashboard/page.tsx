@@ -2,562 +2,561 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import {
+  Users,
+  TrendingUp,
+  BookOpen,
+  Award,
+  BarChart3,
+  Settings,
+  Bell,
+  Search,
+  ChevronRight,
+  ArrowUpRight,
+  ArrowDownRight,
+  Zap,
+  Shield,
+  Wrench,
+  Activity,
+  Target,
+  Calendar,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  Building2,
+  UserCheck,
+  GraduationCap,
+  RefreshCw,
+} from 'lucide-react'
 
-interface Employee {
-  id: string
-  name: string
-  department: string
-  position: string
-  skills: { category: string; level: number }[]
-  lastAssessment: string
-  recommendedCourses: number
-}
-
-interface DepartmentStat {
-  name: string
-  avgScore: number
-  employeeCount: number
-  skillGaps: string[]
-}
-
-const mockEmployees: Employee[] = [
+// Mock Data
+const employees = [
   {
     id: '1',
     name: '김철수',
     department: '생산1팀',
     position: '주임',
-    skills: [
-      { category: '스마트 제조', level: 3 },
-      { category: '데이터 분석', level: 2 },
-      { category: '품질관리', level: 4 },
-      { category: '자동화', level: 2 },
-      { category: 'IoT/센서', level: 3 },
-    ],
+    avatar: 'KC',
+    skills: { 스마트제조: 3, 데이터분석: 2, 품질관리: 4, 자동화: 2, IoT: 3 },
     lastAssessment: '2024-01-15',
-    recommendedCourses: 3,
+    status: 'active',
   },
   {
     id: '2',
     name: '이영희',
     department: '품질관리팀',
     position: '대리',
-    skills: [
-      { category: '스마트 제조', level: 2 },
-      { category: '데이터 분석', level: 4 },
-      { category: '품질관리', level: 5 },
-      { category: '자동화', level: 3 },
-      { category: 'IoT/센서', level: 2 },
-    ],
+    avatar: 'LY',
+    skills: { 스마트제조: 2, 데이터분석: 4, 품질관리: 5, 자동화: 3, IoT: 2 },
     lastAssessment: '2024-01-18',
-    recommendedCourses: 2,
+    status: 'active',
   },
   {
     id: '3',
     name: '박민수',
     department: '생산2팀',
     position: '사원',
-    skills: [
-      { category: '스마트 제조', level: 2 },
-      { category: '데이터 분석', level: 1 },
-      { category: '품질관리', level: 2 },
-      { category: '자동화', level: 1 },
-      { category: 'IoT/센서', level: 1 },
-    ],
+    avatar: 'PM',
+    skills: { 스마트제조: 2, 데이터분석: 1, 품질관리: 2, 자동화: 1, IoT: 1 },
     lastAssessment: '2024-01-20',
-    recommendedCourses: 5,
+    status: 'pending',
   },
   {
     id: '4',
     name: '정수진',
     department: '자동화팀',
     position: '과장',
-    skills: [
-      { category: '스마트 제조', level: 4 },
-      { category: '데이터 분석', level: 3 },
-      { category: '품질관리', level: 3 },
-      { category: '자동화', level: 5 },
-      { category: 'IoT/센서', level: 4 },
-    ],
+    avatar: 'JS',
+    skills: { 스마트제조: 4, 데이터분석: 3, 품질관리: 3, 자동화: 5, IoT: 4 },
     lastAssessment: '2024-01-10',
-    recommendedCourses: 1,
+    status: 'active',
   },
 ]
 
-const departmentStats: DepartmentStat[] = [
-  {
-    name: '생산1팀',
-    avgScore: 2.8,
-    employeeCount: 15,
-    skillGaps: ['데이터 분석', '자동화'],
-  },
-  {
-    name: '생산2팀',
-    avgScore: 2.2,
-    employeeCount: 12,
-    skillGaps: ['데이터 분석', '자동화', 'IoT/센서'],
-  },
-  {
-    name: '품질관리팀',
-    avgScore: 3.4,
-    employeeCount: 8,
-    skillGaps: ['스마트 제조', 'IoT/센서'],
-  },
-  {
-    name: '자동화팀',
-    avgScore: 4.0,
-    employeeCount: 6,
-    skillGaps: [],
-  },
+const departmentStats = [
+  { name: '생산1팀', score: 2.8, employees: 15, trend: 'up', change: 0.3 },
+  { name: '생산2팀', score: 2.2, employees: 12, trend: 'down', change: -0.1 },
+  { name: '품질관리팀', score: 3.4, employees: 8, trend: 'up', change: 0.5 },
+  { name: '자동화팀', score: 4.0, employees: 6, trend: 'up', change: 0.2 },
 ]
 
-const courseRecommendations = [
-  {
-    id: 1,
-    title: '스마트공장 데이터 분석 기초',
-    provider: '한국생산성본부',
-    duration: '16시간',
-    targetLevel: '초급',
-    matchedEmployees: 8,
-    category: '데이터 분석',
-  },
-  {
-    id: 2,
-    title: 'PLC 프로그래밍 실무',
-    provider: '대한상공회의소',
-    duration: '24시간',
-    targetLevel: '중급',
-    matchedEmployees: 5,
-    category: '스마트 제조',
-  },
-  {
-    id: 3,
-    title: '협동로봇 운용 및 프로그래밍',
-    provider: '로봇산업진흥원',
-    duration: '32시간',
-    targetLevel: '초급',
-    matchedEmployees: 12,
-    category: '자동화',
-  },
-  {
-    id: 4,
-    title: '산업용 IoT 센서 활용',
-    provider: '스마트제조혁신센터',
-    duration: '16시간',
-    targetLevel: '중급',
-    matchedEmployees: 6,
-    category: 'IoT/센서',
-  },
+const recentActivities = [
+  { type: 'assessment', user: '김철수', action: '스킬 진단 완료', time: '2시간 전' },
+  { type: 'course', user: '이영희', action: 'PLC 자동화 과정 수료', time: '5시간 전' },
+  { type: 'badge', user: '정수진', action: '자동화 전문가 뱃지 획득', time: '1일 전' },
+  { type: 'assessment', user: '박민수', action: '스킬 진단 요청됨', time: '2일 전' },
+]
+
+const recommendedCourses = [
+  { title: '데이터 분석 기초', department: '생산1팀', matched: 8, priority: 'high' },
+  { title: 'IoT 센서 활용', department: '생산2팀', matched: 6, priority: 'medium' },
+  { title: 'PLC 프로그래밍', department: '전체', matched: 12, priority: 'high' },
 ]
 
 export default function Dashboard() {
-  const [selectedTab, setSelectedTab] = useState<'overview' | 'employees' | 'courses'>('overview')
-  const [biz360Connected, setBiz360Connected] = useState(true)
+  const [selectedTab, setSelectedTab] = useState<'overview' | 'employees' | 'skills' | 'courses'>('overview')
 
-  const avgCompanyScore =
-    mockEmployees.reduce(
-      (sum, emp) => sum + emp.skills.reduce((s, skill) => s + skill.level, 0) / emp.skills.length,
-      0
-    ) / mockEmployees.length
-
-  const getLevelColor = (level: number) => {
-    if (level >= 4) return 'bg-green-100 text-green-700'
-    if (level >= 3) return 'bg-blue-100 text-blue-700'
-    if (level >= 2) return 'bg-yellow-100 text-yellow-700'
-    return 'bg-red-100 text-red-700'
+  const getSkillColor = (level: number) => {
+    if (level >= 4) return 'bg-emerald-500'
+    if (level >= 3) return 'bg-blue-500'
+    if (level >= 2) return 'bg-amber-500'
+    return 'bg-red-500'
   }
 
-  const getLevelText = (level: number) => {
-    if (level >= 5) return '전문가'
-    if (level >= 4) return '고급'
-    if (level >= 3) return '중급'
-    if (level >= 2) return '초급'
-    return '입문'
+  const getSkillBgColor = (level: number) => {
+    if (level >= 4) return 'bg-emerald-500/20 text-emerald-400'
+    if (level >= 3) return 'bg-blue-500/20 text-blue-400'
+    if (level >= 2) return 'bg-amber-500/20 text-amber-400'
+    return 'bg-red-500/20 text-red-400'
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <Link href="/" className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">S</span>
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">SkillBridge</h1>
-                  <p className="text-xs text-gray-500">기업 대시보드</p>
-                </div>
-              </Link>
+    <div className="min-h-screen bg-slate-950">
+      {/* Sidebar */}
+      <aside className="fixed left-0 top-0 h-full w-64 bg-slate-900 border-r border-slate-800 z-50">
+        <div className="p-6">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-xl flex items-center justify-center">
+              <Zap className="w-6 h-6 text-white" />
             </div>
-            <div className="flex items-center gap-4">
-              <div
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm ${
-                  biz360Connected
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-red-100 text-red-700'
+            <div>
+              <span className="text-xl font-bold text-white">
+                Biz<span className="text-violet-400">360</span>
+              </span>
+              <p className="text-xs text-slate-500">Enterprise Dashboard</p>
+            </div>
+          </Link>
+        </div>
+
+        <nav className="px-4 space-y-1">
+          {[
+            { id: 'overview', icon: BarChart3, label: '전체 현황' },
+            { id: 'employees', icon: Users, label: '직원 관리' },
+            { id: 'skills', icon: Target, label: '역량 분석' },
+            { id: 'courses', icon: GraduationCap, label: '교육 관리' },
+          ].map((item) => {
+            const Icon = item.icon
+            return (
+              <button
+                key={item.id}
+                onClick={() => setSelectedTab(item.id as typeof selectedTab)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${
+                  selectedTab === item.id
+                    ? 'bg-violet-600 text-white'
+                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                 }`}
               >
-                <div
-                  className={`w-2 h-2 rounded-full ${
-                    biz360Connected ? 'bg-green-500' : 'bg-red-500'
-                  }`}
-                />
-                Biz360 {biz360Connected ? '연동됨' : '미연동'}
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gray-200 rounded-full" />
-                <span className="text-gray-700 font-medium">(주)스마트테크</span>
-              </div>
+                <Icon className="w-5 h-5" />
+                {item.label}
+              </button>
+            )
+          })}
+        </nav>
+
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-800">
+          <div className="flex items-center gap-3 px-4 py-3 bg-slate-800/50 rounded-xl">
+            <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-full flex items-center justify-center text-white font-medium">
+              ST
             </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">(주)스마트테크</p>
+              <p className="text-xs text-slate-500">관리자</p>
+            </div>
+            <Settings className="w-5 h-5 text-slate-500" />
           </div>
         </div>
-      </header>
+      </aside>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Tabs */}
-        <div className="flex gap-4 mb-8 border-b">
-          {[
-            { id: 'overview', label: '전체 현황' },
-            { id: 'employees', label: '직원 관리' },
-            { id: 'courses', label: '교육 과정' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setSelectedTab(tab.id as typeof selectedTab)}
-              className={`pb-4 px-2 font-medium transition ${
-                selectedTab === tab.id
-                  ? 'text-primary-600 border-b-2 border-primary-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      {/* Main Content */}
+      <main className="ml-64">
+        {/* Header */}
+        <header className="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-sm border-b border-slate-800">
+          <div className="flex items-center justify-between px-8 py-4">
+            <div>
+              <h1 className="text-2xl font-bold text-white">
+                {selectedTab === 'overview' && '전체 현황'}
+                {selectedTab === 'employees' && '직원 관리'}
+                {selectedTab === 'skills' && '역량 분석'}
+                {selectedTab === 'courses' && '교육 관리'}
+              </h1>
+              <p className="text-slate-500 text-sm">Biz360 연동 · 마지막 동기화: 2시간 전</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <input
+                  type="text"
+                  placeholder="검색..."
+                  className="pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:border-violet-500 w-64"
+                />
+              </div>
+              <button className="relative p-2 text-slate-400 hover:text-white transition">
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-violet-500 rounded-full" />
+              </button>
+              <button className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-500 transition">
+                <RefreshCw className="w-4 h-4" />
+                동기화
+              </button>
+            </div>
+          </div>
+        </header>
 
-        {/* Overview Tab */}
-        {selectedTab === 'overview' && (
-          <div className="space-y-8">
-            {/* Stats Cards */}
-            <div className="grid md:grid-cols-4 gap-6">
-              <div className="bg-white rounded-xl p-6 shadow-sm">
-                <div className="text-gray-500 text-sm mb-1">전체 직원 수</div>
-                <div className="text-3xl font-bold text-gray-900">41명</div>
-                <div className="text-green-600 text-sm mt-2">+3 이번 달</div>
+        <div className="p-8">
+          {/* Overview Tab */}
+          {selectedTab === 'overview' && (
+            <div className="space-y-8">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-4 gap-6">
+                {[
+                  { label: '전체 직원', value: '41', sub: '+3 이번 달', icon: Users, color: 'violet' },
+                  { label: '진단 완료율', value: '85%', sub: '35/41명', icon: CheckCircle2, color: 'emerald' },
+                  { label: '평균 역량', value: '3.2', sub: '+0.3 전월 대비', icon: TrendingUp, color: 'blue' },
+                  { label: '진행중 교육', value: '12', sub: '4개 과정', icon: BookOpen, color: 'amber' },
+                ].map((stat, i) => {
+                  const Icon = stat.icon
+                  return (
+                    <div key={i} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className={`p-3 rounded-xl bg-${stat.color}-500/20`}>
+                          <Icon className={`w-6 h-6 text-${stat.color}-400`} />
+                        </div>
+                        <span className="text-emerald-400 text-sm flex items-center gap-1">
+                          <ArrowUpRight className="w-4 h-4" />
+                          12%
+                        </span>
+                      </div>
+                      <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
+                      <div className="text-slate-500 text-sm">{stat.label}</div>
+                      <div className="text-slate-400 text-xs mt-1">{stat.sub}</div>
+                    </div>
+                  )
+                })}
               </div>
-              <div className="bg-white rounded-xl p-6 shadow-sm">
-                <div className="text-gray-500 text-sm mb-1">진단 완료율</div>
-                <div className="text-3xl font-bold text-gray-900">85%</div>
-                <div className="text-gray-500 text-sm mt-2">35/41명 완료</div>
-              </div>
-              <div className="bg-white rounded-xl p-6 shadow-sm">
-                <div className="text-gray-500 text-sm mb-1">평균 역량 점수</div>
-                <div className="text-3xl font-bold text-primary-600">
-                  {avgCompanyScore.toFixed(1)}
+
+              {/* Charts Row */}
+              <div className="grid grid-cols-3 gap-6">
+                {/* Skill Distribution */}
+                <div className="col-span-2 bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-semibold text-white">역량 영역별 현황</h3>
+                    <button className="text-slate-400 hover:text-white text-sm">자세히 보기</button>
+                  </div>
+                  <div className="space-y-4">
+                    {[
+                      { name: '스마트 제조', avg: 2.8, target: 4.0 },
+                      { name: '데이터 분석', avg: 2.5, target: 4.0 },
+                      { name: '품질 관리', avg: 3.5, target: 4.0 },
+                      { name: '자동화', avg: 2.8, target: 4.0 },
+                      { name: 'IoT/센서', avg: 2.5, target: 4.0 },
+                    ].map((skill, i) => (
+                      <div key={i}>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-slate-300">{skill.name}</span>
+                          <span className="text-slate-500">
+                            {skill.avg} / {skill.target}
+                          </span>
+                        </div>
+                        <div className="relative h-2 bg-slate-700 rounded-full overflow-hidden">
+                          <div
+                            className={`absolute left-0 top-0 h-full rounded-full ${
+                              skill.avg >= 3.5 ? 'bg-emerald-500' : skill.avg >= 2.5 ? 'bg-amber-500' : 'bg-red-500'
+                            }`}
+                            style={{ width: `${(skill.avg / 5) * 100}%` }}
+                          />
+                          <div
+                            className="absolute top-0 h-full w-0.5 bg-violet-400"
+                            style={{ left: `${(skill.target / 5) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-4 mt-6 pt-4 border-t border-slate-700">
+                    <span className="flex items-center gap-2 text-xs text-slate-500">
+                      <span className="w-3 h-3 bg-emerald-500 rounded" /> 목표 달성
+                    </span>
+                    <span className="flex items-center gap-2 text-xs text-slate-500">
+                      <span className="w-3 h-3 bg-amber-500 rounded" /> 개선 필요
+                    </span>
+                    <span className="flex items-center gap-2 text-xs text-slate-500">
+                      <span className="w-3 h-3 bg-violet-400 rounded-full" /> 목표치
+                    </span>
+                  </div>
                 </div>
-                <div className="text-green-600 text-sm mt-2">+0.3 전월 대비</div>
+
+                {/* Recent Activity */}
+                <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
+                  <h3 className="text-lg font-semibold text-white mb-6">최근 활동</h3>
+                  <div className="space-y-4">
+                    {recentActivities.map((activity, i) => (
+                      <div key={i} className="flex items-start gap-3">
+                        <div
+                          className={`p-2 rounded-lg ${
+                            activity.type === 'assessment'
+                              ? 'bg-blue-500/20'
+                              : activity.type === 'course'
+                              ? 'bg-emerald-500/20'
+                              : 'bg-amber-500/20'
+                          }`}
+                        >
+                          {activity.type === 'assessment' && <Target className="w-4 h-4 text-blue-400" />}
+                          {activity.type === 'course' && <BookOpen className="w-4 h-4 text-emerald-400" />}
+                          {activity.type === 'badge' && <Award className="w-4 h-4 text-amber-400" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-white">{activity.user}</p>
+                          <p className="text-xs text-slate-500">{activity.action}</p>
+                        </div>
+                        <span className="text-xs text-slate-600">{activity.time}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="bg-white rounded-xl p-6 shadow-sm">
-                <div className="text-gray-500 text-sm mb-1">추천 교육 수</div>
-                <div className="text-3xl font-bold text-gray-900">12개</div>
-                <div className="text-gray-500 text-sm mt-2">4개 진행중</div>
+
+              {/* Department & Recommendations */}
+              <div className="grid grid-cols-2 gap-6">
+                {/* Department Stats */}
+                <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-semibold text-white">부서별 역량</h3>
+                    <button className="text-slate-400 hover:text-white text-sm">전체 보기</button>
+                  </div>
+                  <div className="space-y-4">
+                    {departmentStats.map((dept, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between p-4 bg-slate-700/30 rounded-xl hover:bg-slate-700/50 transition cursor-pointer"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-violet-500/20 rounded-lg flex items-center justify-center">
+                            <Building2 className="w-5 h-5 text-violet-400" />
+                          </div>
+                          <div>
+                            <p className="text-white font-medium">{dept.name}</p>
+                            <p className="text-slate-500 text-sm">{dept.employees}명</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <p className={`text-lg font-bold ${getSkillBgColor(dept.score).split(' ')[1]}`}>
+                              {dept.score}
+                            </p>
+                            <p
+                              className={`text-xs flex items-center gap-1 ${
+                                dept.trend === 'up' ? 'text-emerald-400' : 'text-red-400'
+                              }`}
+                            >
+                              {dept.trend === 'up' ? (
+                                <ArrowUpRight className="w-3 h-3" />
+                              ) : (
+                                <ArrowDownRight className="w-3 h-3" />
+                              )}
+                              {Math.abs(dept.change)}
+                            </p>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-slate-600" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Recommended Courses */}
+                <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-semibold text-white">추천 교육 과정</h3>
+                    <Link href="/skillbridge" className="text-violet-400 hover:text-violet-300 text-sm">
+                      SkillBridge 바로가기
+                    </Link>
+                  </div>
+                  <div className="space-y-4">
+                    {recommendedCourses.map((course, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between p-4 bg-slate-700/30 rounded-xl hover:bg-slate-700/50 transition cursor-pointer"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                              course.priority === 'high' ? 'bg-red-500/20' : 'bg-amber-500/20'
+                            }`}
+                          >
+                            <GraduationCap
+                              className={`w-5 h-5 ${course.priority === 'high' ? 'text-red-400' : 'text-amber-400'}`}
+                            />
+                          </div>
+                          <div>
+                            <p className="text-white font-medium">{course.title}</p>
+                            <p className="text-slate-500 text-sm">{course.department} 대상</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm text-violet-400">{course.matched}명 매칭</span>
+                          <ChevronRight className="w-5 h-5 text-slate-600" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <Link
+                    href="/skillbridge"
+                    className="mt-4 w-full py-3 bg-violet-600 text-white rounded-xl hover:bg-violet-500 transition flex items-center justify-center gap-2"
+                  >
+                    교육 과정 탐색하기
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </div>
+
+              {/* Biz360 Integration Status */}
+              <div className="bg-gradient-to-r from-violet-900/30 to-fuchsia-900/30 border border-violet-500/20 rounded-2xl p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-violet-500/20 rounded-xl flex items-center justify-center">
+                      <Zap className="w-6 h-6 text-violet-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">Biz360 연동 상태</h3>
+                      <p className="text-slate-400 text-sm">인사정보, 조직도, 교육이력 실시간 동기화 중</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    {[
+                      { label: '인사 정보', status: 'active' },
+                      { label: '조직도', status: 'active' },
+                      { label: '교육 이력', status: 'pending' },
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        {item.status === 'active' ? (
+                          <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                        ) : (
+                          <AlertCircle className="w-5 h-5 text-amber-400" />
+                        )}
+                        <span className="text-sm text-slate-300">{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
+          )}
 
-            {/* Department Analysis */}
-            <div className="bg-white rounded-xl p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">부서별 역량 현황</h3>
-              <div className="overflow-x-auto">
+          {/* Employees Tab */}
+          {selectedTab === 'employees' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <button className="px-4 py-2 bg-violet-600 text-white rounded-lg">전체</button>
+                  <button className="px-4 py-2 bg-slate-800 text-slate-400 rounded-lg hover:bg-slate-700">
+                    진단 완료
+                  </button>
+                  <button className="px-4 py-2 bg-slate-800 text-slate-400 rounded-lg hover:bg-slate-700">
+                    진단 대기
+                  </button>
+                </div>
+                <button className="px-4 py-2 bg-violet-600 text-white rounded-lg flex items-center gap-2">
+                  <UserCheck className="w-4 h-4" />
+                  진단 요청 보내기
+                </button>
+              </div>
+
+              <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl overflow-hidden">
                 <table className="w-full">
                   <thead>
-                    <tr className="text-left text-gray-500 text-sm border-b">
-                      <th className="pb-3 font-medium">부서</th>
-                      <th className="pb-3 font-medium">인원</th>
-                      <th className="pb-3 font-medium">평균 점수</th>
-                      <th className="pb-3 font-medium">역량 그래프</th>
-                      <th className="pb-3 font-medium">부족 역량</th>
+                    <tr className="border-b border-slate-700">
+                      <th className="text-left px-6 py-4 text-slate-400 font-medium text-sm">직원</th>
+                      <th className="text-left px-6 py-4 text-slate-400 font-medium text-sm">부서</th>
+                      <th className="text-left px-6 py-4 text-slate-400 font-medium text-sm">역량 현황</th>
+                      <th className="text-left px-6 py-4 text-slate-400 font-medium text-sm">마지막 진단</th>
+                      <th className="text-left px-6 py-4 text-slate-400 font-medium text-sm">상태</th>
+                      <th className="text-left px-6 py-4 text-slate-400 font-medium text-sm"></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {departmentStats.map((dept, index) => (
-                      <tr key={index} className="border-b last:border-0">
-                        <td className="py-4 font-medium text-gray-900">{dept.name}</td>
-                        <td className="py-4 text-gray-600">{dept.employeeCount}명</td>
-                        <td className="py-4">
-                          <span className={`px-2 py-1 rounded-full text-sm ${getLevelColor(dept.avgScore)}`}>
-                            {dept.avgScore.toFixed(1)}
-                          </span>
-                        </td>
-                        <td className="py-4">
-                          <div className="w-full max-w-[200px] h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-primary-600 rounded-full"
-                              style={{ width: `${(dept.avgScore / 5) * 100}%` }}
-                            />
-                          </div>
-                        </td>
-                        <td className="py-4">
-                          {dept.skillGaps.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {dept.skillGaps.map((gap, i) => (
-                                <span
-                                  key={i}
-                                  className="bg-red-50 text-red-600 text-xs px-2 py-1 rounded"
-                                >
-                                  {gap}
-                                </span>
-                              ))}
+                    {employees.map((emp) => {
+                      const avgSkill =
+                        Object.values(emp.skills).reduce((a, b) => a + b, 0) / Object.values(emp.skills).length
+                      return (
+                        <tr key={emp.id} className="border-b border-slate-700/50 hover:bg-slate-700/30 transition">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                                {emp.avatar}
+                              </div>
+                              <div>
+                                <p className="text-white font-medium">{emp.name}</p>
+                                <p className="text-slate-500 text-sm">{emp.position}</p>
+                              </div>
                             </div>
-                          ) : (
-                            <span className="text-green-600 text-sm">우수</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="px-6 py-4 text-slate-300">{emp.department}</td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              <div className="flex gap-0.5">
+                                {Object.values(emp.skills).map((level, i) => (
+                                  <div key={i} className={`w-1.5 h-6 rounded-sm ${getSkillColor(level)}`} />
+                                ))}
+                              </div>
+                              <span className={`text-sm px-2 py-0.5 rounded ${getSkillBgColor(avgSkill)}`}>
+                                {avgSkill.toFixed(1)}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-slate-400 text-sm">{emp.lastAssessment}</td>
+                          <td className="px-6 py-4">
+                            {emp.status === 'active' ? (
+                              <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs rounded-full">
+                                완료
+                              </span>
+                            ) : (
+                              <span className="px-2 py-1 bg-amber-500/20 text-amber-400 text-xs rounded-full">
+                                대기중
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <button className="text-violet-400 hover:text-violet-300 text-sm">상세</button>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
             </div>
+          )}
 
-            {/* Skill Gap Chart */}
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-xl p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6">역량 영역별 현황</h3>
-                <div className="space-y-4">
-                  {['스마트 제조', '데이터 분석', '품질관리', '자동화', 'IoT/센서'].map(
-                    (skill, index) => {
-                      const avgLevel =
-                        mockEmployees.reduce((sum, emp) => {
-                          const s = emp.skills.find((sk) => sk.category === skill)
-                          return sum + (s?.level || 0)
-                        }, 0) / mockEmployees.length
-
-                      return (
-                        <div key={index}>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="text-gray-700">{skill}</span>
-                            <span className="text-gray-500">{avgLevel.toFixed(1)} / 5.0</span>
-                          </div>
-                          <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${
-                                avgLevel >= 3 ? 'bg-green-500' : avgLevel >= 2 ? 'bg-yellow-500' : 'bg-red-500'
-                              }`}
-                              style={{ width: `${(avgLevel / 5) * 100}%` }}
-                            />
-                          </div>
-                        </div>
-                      )
-                    }
-                  )}
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6">Biz360 연동 현황</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                        <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900">인사 정보 연동</div>
-                        <div className="text-sm text-gray-500">마지막 동기화: 2시간 전</div>
-                      </div>
-                    </div>
-                    <span className="text-green-600 text-sm font-medium">활성</span>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                        <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900">조직도 연동</div>
-                        <div className="text-sm text-gray-500">마지막 동기화: 1일 전</div>
-                      </div>
-                    </div>
-                    <span className="text-green-600 text-sm font-medium">활성</span>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                        <svg className="w-5 h-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900">교육 이력 연동</div>
-                        <div className="text-sm text-gray-500">설정 필요</div>
-                      </div>
-                    </div>
-                    <button className="text-primary-600 text-sm font-medium hover:underline">
-                      설정
-                    </button>
-                  </div>
-                </div>
+          {/* Skills Tab */}
+          {selectedTab === 'skills' && (
+            <div className="flex items-center justify-center h-96">
+              <div className="text-center">
+                <Target className="w-16 h-16 text-slate-700 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">역량 분석 대시보드</h3>
+                <p className="text-slate-500">상세 역량 분석 기능 준비 중입니다</p>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Employees Tab */}
-        {selectedTab === 'employees' && (
-          <div className="bg-white rounded-xl shadow-sm">
-            <div className="p-6 border-b">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900">직원 역량 현황</h3>
-                <div className="flex gap-3">
-                  <input
-                    type="text"
-                    placeholder="이름 또는 부서 검색"
-                    className="px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                  <button className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-primary-700">
-                    진단 요청 보내기
-                  </button>
-                </div>
+          {/* Courses Tab */}
+          {selectedTab === 'courses' && (
+            <div className="flex items-center justify-center h-96">
+              <div className="text-center">
+                <GraduationCap className="w-16 h-16 text-slate-700 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">교육 관리</h3>
+                <p className="text-slate-500 mb-4">교육 과정 관리 기능 준비 중입니다</p>
+                <Link
+                  href="/skillbridge"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-violet-600 text-white rounded-lg hover:bg-violet-500 transition"
+                >
+                  SkillBridge에서 교육 찾기
+                  <ChevronRight className="w-4 h-4" />
+                </Link>
               </div>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left text-gray-500 text-sm bg-gray-50">
-                    <th className="px-6 py-3 font-medium">이름</th>
-                    <th className="px-6 py-3 font-medium">부서</th>
-                    <th className="px-6 py-3 font-medium">직급</th>
-                    <th className="px-6 py-3 font-medium">역량 수준</th>
-                    <th className="px-6 py-3 font-medium">마지막 진단</th>
-                    <th className="px-6 py-3 font-medium">추천 교육</th>
-                    <th className="px-6 py-3 font-medium">액션</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mockEmployees.map((employee) => {
-                    const avgLevel =
-                      employee.skills.reduce((sum, s) => sum + s.level, 0) / employee.skills.length
-
-                    return (
-                      <tr key={employee.id} className="border-b hover:bg-gray-50">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                              <span className="text-primary-700 font-medium text-sm">
-                                {employee.name[0]}
-                              </span>
-                            </div>
-                            <span className="font-medium text-gray-900">{employee.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-gray-600">{employee.department}</td>
-                        <td className="px-6 py-4 text-gray-600">{employee.position}</td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <div className="flex gap-0.5">
-                              {employee.skills.map((skill, i) => (
-                                <div
-                                  key={i}
-                                  className={`w-2 h-6 rounded-sm ${
-                                    skill.level >= 4
-                                      ? 'bg-green-500'
-                                      : skill.level >= 3
-                                      ? 'bg-blue-500'
-                                      : skill.level >= 2
-                                      ? 'bg-yellow-500'
-                                      : 'bg-red-500'
-                                  }`}
-                                  title={`${skill.category}: ${skill.level}`}
-                                />
-                              ))}
-                            </div>
-                            <span className={`text-sm px-2 py-0.5 rounded ${getLevelColor(avgLevel)}`}>
-                              {getLevelText(Math.round(avgLevel))}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-gray-600">{employee.lastAssessment}</td>
-                        <td className="px-6 py-4">
-                          <span className="bg-orange-100 text-orange-700 text-sm px-2 py-1 rounded">
-                            {employee.recommendedCourses}개
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <button className="text-primary-600 hover:underline text-sm">
-                            상세 보기
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Courses Tab */}
-        {selectedTab === 'courses' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900">맞춤 추천 교육 과정</h3>
-              <div className="flex gap-3">
-                <select className="px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
-                  <option>모든 카테고리</option>
-                  <option>스마트 제조</option>
-                  <option>데이터 분석</option>
-                  <option>품질관리</option>
-                  <option>자동화</option>
-                  <option>IoT/센서</option>
-                </select>
-                <select className="px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
-                  <option>모든 수준</option>
-                  <option>초급</option>
-                  <option>중급</option>
-                  <option>고급</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              {courseRecommendations.map((course) => (
-                <div key={course.id} className="bg-white rounded-xl p-6 shadow-sm">
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="bg-primary-100 text-primary-700 text-xs px-2 py-1 rounded">
-                      {course.category}
-                    </span>
-                    <span className="text-orange-600 text-sm font-medium">
-                      {course.matchedEmployees}명 대상
-                    </span>
-                  </div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">{course.title}</h4>
-                  <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-                    <span>{course.provider}</span>
-                    <span>|</span>
-                    <span>{course.duration}</span>
-                    <span>|</span>
-                    <span className="bg-gray-100 px-2 py-0.5 rounded">{course.targetLevel}</span>
-                  </div>
-                  <div className="flex gap-3">
-                    <button className="flex-1 bg-primary-600 text-white py-2 rounded-lg text-sm hover:bg-primary-700">
-                      교육 신청
-                    </button>
-                    <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50">
-                      상세 보기
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      </main>
     </div>
   )
 }
