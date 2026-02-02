@@ -111,8 +111,36 @@ export default function Dashboard() {
       {/* Navbar */}
       <Navbar />
 
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-16 h-[calc(100%-4rem)] w-64 bg-slate-900 border-r border-slate-800 z-40">
+      {/* Mobile Tab Bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 z-40">
+        <div className="flex justify-around py-2">
+          {[
+            { id: 'overview', icon: BarChart3, label: '현황' },
+            { id: 'employees', icon: Users, label: '직원' },
+            { id: 'skills', icon: Target, label: '역량' },
+            { id: 'courses', icon: GraduationCap, label: '교육' },
+          ].map((item) => {
+            const Icon = item.icon
+            return (
+              <button
+                key={item.id}
+                onClick={() => setSelectedTab(item.id as typeof selectedTab)}
+                className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition ${
+                  selectedTab === item.id
+                    ? 'text-violet-400'
+                    : 'text-slate-500'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="text-xs">{item.label}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Sidebar - Hidden on mobile */}
+      <aside className="hidden lg:block fixed left-0 top-16 h-[calc(100%-4rem)] w-64 bg-slate-900 border-r border-slate-800 z-40">
         <div className="p-6">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-xl flex items-center justify-center">
@@ -167,12 +195,12 @@ export default function Dashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="ml-64 pt-16">
+      <main className="lg:ml-64 pt-16 pb-20 lg:pb-0">
         {/* Header */}
         <header className="sticky top-16 z-30 bg-slate-900/80 backdrop-blur-sm border-b border-slate-800">
-          <div className="flex items-center justify-between px-8 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-8 py-4 gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-white">
+              <h1 className="text-xl sm:text-2xl font-bold text-white">
                 {selectedTab === 'overview' && '전체 현황'}
                 {selectedTab === 'employees' && '직원 관리'}
                 {selectedTab === 'skills' && '역량 분석'}
@@ -180,33 +208,36 @@ export default function Dashboard() {
               </h1>
               <p className="text-slate-500 text-sm">Biz360 연동 · 마지막 동기화: 2시간 전</p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="relative">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="relative flex-1 sm:flex-none">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <input
                   type="text"
                   placeholder="검색..."
-                  className="pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:border-violet-500 w-64"
+                  className="w-full sm:w-64 pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:border-violet-500"
                 />
               </div>
               <button className="relative p-2 text-slate-400 hover:text-white transition">
                 <Bell className="w-5 h-5" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-violet-500 rounded-full" />
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-500 transition">
+              <button className="hidden sm:flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-500 transition">
                 <RefreshCw className="w-4 h-4" />
                 동기화
+              </button>
+              <button className="sm:hidden p-2 bg-violet-600 text-white rounded-lg">
+                <RefreshCw className="w-4 h-4" />
               </button>
             </div>
           </div>
         </header>
 
-        <div className="p-8">
+        <div className="p-4 sm:p-8">
           {/* Overview Tab */}
           {selectedTab === 'overview' && (
-            <div className="space-y-8">
+            <div className="space-y-6 sm:space-y-8">
               {/* Stats Grid */}
-              <div className="grid grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 {[
                   { label: '전체 직원', value: '41', sub: '+3 이번 달', icon: Users, color: 'violet' },
                   { label: '진단 완료율', value: '85%', sub: '35/41명', icon: CheckCircle2, color: 'emerald' },
@@ -234,7 +265,7 @@ export default function Dashboard() {
               </div>
 
               {/* Charts Row */}
-              <div className="grid grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Skill Distribution */}
                 <div className="col-span-2 bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
                   <div className="flex items-center justify-between mb-6">
@@ -315,7 +346,7 @@ export default function Dashboard() {
               </div>
 
               {/* Department & Recommendations */}
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Department Stats */}
                 <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
                   <div className="flex items-center justify-between mb-6">

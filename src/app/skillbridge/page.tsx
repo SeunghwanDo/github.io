@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import {
   Search,
@@ -19,9 +19,11 @@ import {
   Play,
   BookOpen,
   Loader2,
+  X,
 } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import { useCourses } from '@/hooks/useCourses'
+import { useDebounce } from '@/hooks/useDebounce'
 
 const categories = [
   { id: 'all', name: '전체', icon: BookOpen },
@@ -34,22 +36,19 @@ const categories = [
 export default function SkillBridgePage() {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
 
-  // Debounce search
-  const handleSearch = (value: string) => {
-    setSearchQuery(value)
-    // Simple debounce
-    setTimeout(() => {
-      setDebouncedSearch(value)
-    }, 300)
-  }
+  // Use debounce hook for search
+  const debouncedSearch = useDebounce(searchQuery, 300)
 
   // Use the courses hook
   const { courses, loading, error } = useCourses({
     category: selectedCategory,
     search: debouncedSearch,
   })
+
+  const clearSearch = () => {
+    setSearchQuery('')
+  }
 
   const getCategoryColor = (category: string | null) => {
     switch (category) {
@@ -133,13 +132,26 @@ export default function SkillBridgePage() {
                   type="text"
                   placeholder="배우고 싶은 기술을 검색하세요..."
                   value={searchQuery}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition"
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-12 pr-32 py-4 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition"
                 />
+                {searchQuery && (
+                  <button
+                    onClick={clearSearch}
+                    className="absolute right-24 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-white transition"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
                 <button className="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-lg hover:from-violet-500 hover:to-fuchsia-500 transition">
                   검색
                 </button>
               </div>
+              {debouncedSearch && (
+                <p className="text-slate-500 text-sm mt-2">
+                  &quot;{debouncedSearch}&quot; 검색 결과: {courses.length}개
+                </p>
+              )}
             </div>
 
             {/* Quick Stats */}

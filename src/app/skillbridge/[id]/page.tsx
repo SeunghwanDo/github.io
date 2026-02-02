@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import { useCourseApplication } from '@/hooks/useCourseApplication'
+import { useCourseReviews } from '@/hooks/useCourseReviews'
 import { useAuth } from '@/hooks/useAuth'
 import {
   ArrowLeft,
@@ -27,6 +28,8 @@ import {
   ChevronRight,
   AlertCircle,
   Loader2,
+  Send,
+  MessageSquare,
 } from 'lucide-react'
 
 // Mock Course Data
@@ -118,6 +121,7 @@ export default function CourseDetailPage() {
   const courseId = params.id as string
   const { user } = useAuth()
   const { applyForCourse, checkApplicationStatus, loading: applyLoading, error: applyError } = useCourseApplication()
+  const { getReviews, createReview, loading: reviewLoading, error: reviewError } = useCourseReviews(courseId)
 
   const [activeTab, setActiveTab] = useState<'overview' | 'curriculum' | 'instructor' | 'reviews'>('overview')
   const [isApplying, setIsApplying] = useState(false)
@@ -129,6 +133,17 @@ export default function CourseDetailPage() {
     email: '',
     notes: '',
   })
+
+  // Review state
+  const [reviews, setReviews] = useState<Array<{
+    id: string
+    rating: number
+    content: string
+    created_at: string
+    user_name?: string
+  }>>([])
+  const [reviewForm, setReviewForm] = useState({ rating: 5, content: '' })
+  const [reviewSubmitted, setReviewSubmitted] = useState(false)
 
   // Default to course 1 for demo
   const course = courseData['1']
@@ -143,6 +158,17 @@ export default function CourseDetailPage() {
     }
     checkExisting()
   }, [courseId])
+
+  // Fetch reviews when tab changes to reviews
+  useEffect(() => {
+    if (activeTab === 'reviews') {
+      const fetchReviews = async () => {
+        const data = await getReviews()
+        setReviews(data)
+      }
+      fetchReviews()
+    }
+  }, [activeTab])
 
   // Pre-fill form with user data
   useEffect(() => {
@@ -167,6 +193,32 @@ export default function CourseDetailPage() {
       setApplicationSuccess(true)
       setExistingApplication({ status: 'pending' })
     }
+  }
+
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!reviewForm.content.trim()) return
+
+    const result = await createReview({
+      courseId,
+      rating: reviewForm.rating,
+      content: reviewForm.content,
+    })
+
+    if (result) {
+      setReviews((prev) => [result, ...prev])
+      setReviewForm({ rating: 5, content: '' })
+      setReviewSubmitted(true)
+      setTimeout(() => setReviewSubmitted(false), 3000)
+    }
+  }
+
+  const formatReviewDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
   }
 
   const getApplicationStatusText = (status: string) => {
@@ -480,13 +532,130 @@ export default function CourseDetailPage() {
 
             {/* Reviews */}
             {activeTab === 'reviews' && (
-              <div>
-                <h2 className="text-2xl font-bold text-white mb-6">수강 후기</h2>
-                <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-12 text-center">
-                  <BookOpen className="w-16 h-16 text-slate-700 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-white mb-2">수강 후기 준비 중</h3>
-                  <p className="text-slate-500">첫 번째 후기를 남겨주세요!</p>
+              <div className="space-y-8">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-white">수강 후기</h2>
+                  <div className="flex items-center gap-2 text-amber-400">
+                    <Star className="w-5 h-5 fill-current" />
+                    <span className="font-semibold">{course.rating}</span>
+                    <span className="text-slate-500">({reviews.length}개)</span>
+                  </div>
                 </div>
+
+                {/* Review Form */}
+                <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4">후기 작성하기</h3>
+                  <form onSubmit={handleReviewSubmit} className="space-y-4">
+                    {/* Rating */}
+                    <div>
+                      <label className="block text-slate-400 text-sm mb-2">평점</label>
+                      <div className="flex gap-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                            className="p-1"
+                          >
+                            <Star
+                              className={`w-8 h-8 transition ${
+                                star <= reviewForm.rating
+                                  ? 'text-amber-400 fill-current'
+                                  : 'text-slate-600'
+                              }`}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div>
+                      <label className="block text-slate-400 text-sm mb-2">후기 내용</label>
+                      <textarea
+                        value={reviewForm.content}
+                        onChange={(e) => setReviewForm({ ...reviewForm, content: e.target.value })}
+                        className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 resize-none"
+                        rows={4}
+                        placeholder="교육 과정에 대한 솔직한 후기를 남겨주세요"
+                      />
+                    </div>
+
+                    {reviewError && (
+                      <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                        <p className="text-red-400 text-sm">{reviewError}</p>
+                      </div>
+                    )}
+
+                    {reviewSubmitted && (
+                      <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        <p className="text-emerald-400 text-sm">후기가 등록되었습니다!</p>
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={reviewLoading || !reviewForm.content.trim()}
+                      className="px-6 py-3 bg-violet-600 text-white rounded-xl hover:bg-violet-500 transition disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {reviewLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          등록 중...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          후기 등록
+                        </>
+                      )}
+                    </button>
+                  </form>
+                </div>
+
+                {/* Reviews List */}
+                {reviews.length === 0 ? (
+                  <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-12 text-center">
+                    <MessageSquare className="w-16 h-16 text-slate-700 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-white mb-2">아직 후기가 없습니다</h3>
+                    <p className="text-slate-500">첫 번째 후기를 남겨주세요!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {reviews.map((review) => (
+                      <div
+                        key={review.id}
+                        className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-full flex items-center justify-center text-white font-medium">
+                              {review.user_name?.[0] || '?'}
+                            </div>
+                            <div>
+                              <p className="text-white font-medium">{review.user_name || '익명'}</p>
+                              <p className="text-slate-500 text-sm">{formatReviewDate(review.created_at)}</p>
+                            </div>
+                          </div>
+                          <div className="flex">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`w-4 h-4 ${
+                                  star <= review.rating
+                                    ? 'text-amber-400 fill-current'
+                                    : 'text-slate-600'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-slate-300 leading-relaxed">{review.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
