@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Navbar from '@/components/Navbar'
 import {
   Users,
   TrendingUp,
@@ -15,14 +16,9 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Zap,
-  Shield,
-  Wrench,
-  Activity,
   Target,
-  Calendar,
   CheckCircle2,
   AlertCircle,
-  Clock,
   Building2,
   UserCheck,
   GraduationCap,
@@ -112,8 +108,11 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-slate-950">
+      {/* Navbar */}
+      <Navbar />
+
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-full w-64 bg-slate-900 border-r border-slate-800 z-50">
+      <aside className="fixed left-0 top-16 h-[calc(100%-4rem)] w-64 bg-slate-900 border-r border-slate-800 z-40">
         <div className="p-6">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-xl flex items-center justify-center">
@@ -168,9 +167,9 @@ export default function Dashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="ml-64">
+      <main className="ml-64 pt-16">
         {/* Header */}
-        <header className="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-sm border-b border-slate-800">
+        <header className="sticky top-16 z-30 bg-slate-900/80 backdrop-blur-sm border-b border-slate-800">
           <div className="flex items-center justify-between px-8 py-4">
             <div>
               <h1 className="text-2xl font-bold text-white">

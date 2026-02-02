@@ -1,8 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
+import Navbar from '@/components/Navbar'
+import { useCourseApplication } from '@/hooks/useCourseApplication'
+import { useAuth } from '@/hooks/useAuth'
 import {
   ArrowLeft,
   Clock,
@@ -15,7 +18,6 @@ import {
   Award,
   Zap,
   BookOpen,
-  Target,
   Building2,
   Phone,
   Mail,
@@ -24,6 +26,7 @@ import {
   Download,
   ChevronRight,
   AlertCircle,
+  Loader2,
 } from 'lucide-react'
 
 // Mock Course Data
@@ -111,12 +114,77 @@ const courseData = {
 
 export default function CourseDetailPage() {
   const params = useParams()
+  const router = useRouter()
   const courseId = params.id as string
+  const { user } = useAuth()
+  const { applyForCourse, checkApplicationStatus, loading: applyLoading, error: applyError } = useCourseApplication()
+
   const [activeTab, setActiveTab] = useState<'overview' | 'curriculum' | 'instructor' | 'reviews'>('overview')
   const [isApplying, setIsApplying] = useState(false)
+  const [applicationSuccess, setApplicationSuccess] = useState(false)
+  const [existingApplication, setExistingApplication] = useState<{ status: string } | null>(null)
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    notes: '',
+  })
 
   // Default to course 1 for demo
   const course = courseData['1']
+
+  // Check existing application
+  useEffect(() => {
+    const checkExisting = async () => {
+      const app = await checkApplicationStatus(courseId)
+      if (app) {
+        setExistingApplication(app)
+      }
+    }
+    checkExisting()
+  }, [courseId])
+
+  // Pre-fill form with user data
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        email: user.email || '',
+        name: user.user_metadata?.name || '',
+      }))
+    }
+  }, [user])
+
+  const handleApply = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    const result = await applyForCourse({
+      courseId,
+      notes: `이름: ${formData.name}, 연락처: ${formData.phone}, 이메일: ${formData.email}${formData.notes ? `, 추가사항: ${formData.notes}` : ''}`,
+    })
+
+    if (result) {
+      setApplicationSuccess(true)
+      setExistingApplication({ status: 'pending' })
+    }
+  }
+
+  const getApplicationStatusText = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return { text: '심사 중', color: 'bg-amber-500/20 text-amber-400' }
+      case 'approved':
+        return { text: '승인됨', color: 'bg-emerald-500/20 text-emerald-400' }
+      case 'rejected':
+        return { text: '미승인', color: 'bg-red-500/20 text-red-400' }
+      case 'completed':
+        return { text: '수료', color: 'bg-blue-500/20 text-blue-400' }
+      case 'cancelled':
+        return { text: '취소됨', color: 'bg-slate-500/20 text-slate-400' }
+      default:
+        return { text: status, color: 'bg-slate-500/20 text-slate-400' }
+    }
+  }
 
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -136,15 +204,16 @@ export default function CourseDetailPage() {
   return (
     <div className="min-h-screen bg-slate-950">
       {/* Navigation */}
-      <nav className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm sticky top-0 z-50">
+      <Navbar />
+
+      {/* Sub Navigation */}
+      <div className="border-b border-slate-800 bg-slate-900/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-6">
-              <Link href="/skillbridge" className="flex items-center gap-2 text-slate-400 hover:text-white transition">
-                <ArrowLeft className="w-5 h-5" />
-                <span>목록으로</span>
-              </Link>
-            </div>
+          <div className="flex justify-between items-center h-14">
+            <Link href="/skillbridge" className="flex items-center gap-2 text-slate-400 hover:text-white transition">
+              <ArrowLeft className="w-5 h-5" />
+              <span>목록으로</span>
+            </Link>
             <div className="flex items-center gap-4">
               <button className="p-2 text-slate-400 hover:text-white transition">
                 <Share2 className="w-5 h-5" />
@@ -155,7 +224,7 @@ export default function CourseDetailPage() {
             </div>
           </div>
         </div>
-      </nav>
+      </div>
 
       {/* Hero Section */}
       <section className="relative">
@@ -235,12 +304,21 @@ export default function CourseDetailPage() {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => setIsApplying(true)}
-                  className="w-full py-4 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-semibold rounded-xl hover:from-violet-500 hover:to-fuchsia-500 transition shadow-lg shadow-violet-500/25 mb-3"
-                >
-                  수강 신청하기
-                </button>
+                {existingApplication ? (
+                  <div className="mb-3">
+                    <div className={`w-full py-4 text-center font-semibold rounded-xl ${getApplicationStatusText(existingApplication.status).color}`}>
+                      {getApplicationStatusText(existingApplication.status).text}
+                    </div>
+                    <p className="text-slate-500 text-sm text-center mt-2">이미 신청한 과정입니다</p>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setIsApplying(true)}
+                    className="w-full py-4 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-semibold rounded-xl hover:from-violet-500 hover:to-fuchsia-500 transition shadow-lg shadow-violet-500/25 mb-3"
+                  >
+                    수강 신청하기
+                  </button>
+                )}
 
                 <button className="w-full py-3 bg-slate-700/50 text-white rounded-xl hover:bg-slate-700 transition flex items-center justify-center gap-2">
                   <Download className="w-4 h-4" />
@@ -444,60 +522,120 @@ export default function CourseDetailPage() {
       {/* Application Modal */}
       {isApplying && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70" onClick={() => setIsApplying(false)} />
+          <div className="absolute inset-0 bg-black/70" onClick={() => !applyLoading && setIsApplying(false)} />
           <div className="relative bg-slate-800 border border-slate-700 rounded-2xl p-8 max-w-md w-full">
-            <h3 className="text-2xl font-bold text-white mb-2">수강 신청</h3>
-            <p className="text-slate-400 mb-6">{course.title}</p>
-
-            <form className="space-y-4">
-              <div>
-                <label className="block text-slate-400 text-sm mb-2">이름</label>
-                <input
-                  type="text"
-                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500"
-                  placeholder="홍길동"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-400 text-sm mb-2">연락처</label>
-                <input
-                  type="tel"
-                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500"
-                  placeholder="010-1234-5678"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-400 text-sm mb-2">이메일</label>
-                <input
-                  type="email"
-                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500"
-                  placeholder="example@email.com"
-                />
-              </div>
-
-              <div className="flex items-start gap-2 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0" />
-                <p className="text-amber-200 text-sm">
-                  국비지원 과정은 내일배움카드가 필요합니다. 미소지자는 발급 후 신청해주세요.
+            {applicationSuccess ? (
+              /* Success State */
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2">신청 완료!</h3>
+                <p className="text-slate-400 mb-6">
+                  교육 신청이 접수되었습니다.<br />
+                  승인 결과는 이메일로 안내됩니다.
                 </p>
+                <button
+                  onClick={() => {
+                    setIsApplying(false)
+                    setApplicationSuccess(false)
+                  }}
+                  className="px-8 py-3 bg-violet-600 text-white rounded-xl hover:bg-violet-500 transition"
+                >
+                  확인
+                </button>
               </div>
+            ) : (
+              /* Form State */
+              <>
+                <h3 className="text-2xl font-bold text-white mb-2">수강 신청</h3>
+                <p className="text-slate-400 mb-6">{course.title}</p>
 
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsApplying(false)}
-                  className="flex-1 py-3 bg-slate-700 text-white rounded-xl hover:bg-slate-600 transition"
-                >
-                  취소
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-xl hover:from-violet-500 hover:to-fuchsia-500 transition"
-                >
-                  신청하기
-                </button>
-              </div>
-            </form>
+                <form onSubmit={handleApply} className="space-y-4">
+                  <div>
+                    <label className="block text-slate-400 text-sm mb-2">이름 *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500"
+                      placeholder="홍길동"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 text-sm mb-2">연락처 *</label>
+                    <input
+                      type="tel"
+                      required
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500"
+                      placeholder="010-1234-5678"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 text-sm mb-2">이메일 *</label>
+                    <input
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500"
+                      placeholder="example@email.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 text-sm mb-2">추가 사항 (선택)</label>
+                    <textarea
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 resize-none"
+                      rows={3}
+                      placeholder="문의 사항이나 특이 사항을 입력해주세요"
+                    />
+                  </div>
+
+                  <div className="flex items-start gap-2 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                    <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0" />
+                    <p className="text-amber-200 text-sm">
+                      국비지원 과정은 내일배움카드가 필요합니다. 미소지자는 발급 후 신청해주세요.
+                    </p>
+                  </div>
+
+                  {applyError && (
+                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                      <p className="text-red-400 text-sm">{applyError}</p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setIsApplying(false)}
+                      disabled={applyLoading}
+                      className="flex-1 py-3 bg-slate-700 text-white rounded-xl hover:bg-slate-600 transition disabled:opacity-50"
+                    >
+                      취소
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={applyLoading}
+                      className="flex-1 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-xl hover:from-violet-500 hover:to-fuchsia-500 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {applyLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          처리 중...
+                        </>
+                      ) : (
+                        '신청하기'
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}

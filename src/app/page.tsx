@@ -19,7 +19,11 @@ import {
   ChevronRight,
   Play,
   Star,
+  Save,
+  Loader2,
 } from 'lucide-react'
+import Navbar from '@/components/Navbar'
+import { useAssessment } from '@/hooks/useAuth'
 
 interface SkillQuestion {
   id: number
@@ -103,6 +107,10 @@ export default function Home() {
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [answers, setAnswers] = useState<Record<number, number>>({})
   const [results, setResults] = useState<SkillResult[]>([])
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  const { saveAssessment } = useAssessment()
 
   const handleAnswer = (questionId: number, value: number) => {
     setAnswers({ ...answers, [questionId]: value })
@@ -122,7 +130,7 @@ export default function Home() {
     }
   }
 
-  const calculateResults = () => {
+  const calculateResults = async () => {
     const skillResults: SkillResult[] = skillQuestions.map((q) => {
       const score = answers[q.id] || 1
       let level = ''
@@ -150,6 +158,23 @@ export default function Home() {
 
     setResults(skillResults)
     setCurrentStep('result')
+
+    // Auto-save assessment
+    const scores: Record<string, number> = {}
+    skillResults.forEach((r) => {
+      scores[r.category] = r.score
+    })
+    const avgScore = skillResults.reduce((sum, r) => sum + r.score, 0) / skillResults.length
+
+    setSaving(true)
+    try {
+      await saveAssessment(scores, avgScore)
+      setSaved(true)
+    } catch (error) {
+      console.error('Failed to save assessment:', error)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const resetTest = () => {
@@ -157,6 +182,7 @@ export default function Home() {
     setCurrentQuestion(0)
     setAnswers({})
     setResults([])
+    setSaved(false)
   }
 
   const averageScore = results.length
@@ -179,39 +205,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      {/* Navigation */}
-      <nav className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-8">
-              <Link href="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-lg flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold text-white">
-                  Biz<span className="text-violet-400">360</span>
-                </span>
-              </Link>
-              <div className="hidden md:flex items-center gap-6">
-                <Link href="/skillbridge" className="text-slate-400 hover:text-white transition">
-                  SkillBridge
-                </Link>
-                <Link href="/dashboard" className="text-slate-400 hover:text-white transition">
-                  대시보드
-                </Link>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <button className="px-4 py-2 text-sm text-slate-300 hover:text-white transition">
-                로그인
-              </button>
-              <button className="px-4 py-2 text-sm bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-lg hover:from-violet-500 hover:to-fuchsia-500 transition shadow-lg shadow-violet-500/25">
-                시작하기
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Intro Section */}
       {currentStep === 'intro' && (
@@ -443,6 +437,18 @@ export default function Home() {
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-white mb-2">역량 진단 결과</h2>
             <p className="text-slate-400">총점 평균: {averageScore} / 5.0</p>
+            {saving && (
+              <div className="flex items-center justify-center gap-2 mt-2 text-violet-400">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                결과 저장 중...
+              </div>
+            )}
+            {saved && (
+              <div className="flex items-center justify-center gap-2 mt-2 text-emerald-400">
+                <CheckCircle2 className="w-4 h-4" />
+                결과가 저장되었습니다
+              </div>
+            )}
           </div>
 
           {/* Overall Score */}
@@ -526,10 +532,10 @@ export default function Home() {
               다시 진단하기
             </button>
             <Link
-              href="/dashboard"
+              href="/skillbridge"
               className="px-6 py-3 bg-violet-600 text-white rounded-xl hover:bg-violet-500 transition"
             >
-              기업 대시보드 보기
+              교육 과정 찾아보기
             </Link>
           </div>
         </div>
