@@ -3,8 +3,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Zap, Menu, X, User, LogOut, ChevronDown } from 'lucide-react'
+import { Zap, Menu, X, User, LogOut, ChevronDown, Award } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
+import NotificationDropdown from './NotificationDropdown'
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -53,7 +54,10 @@ export default function Navbar() {
           </div>
 
           {/* Right Side */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
+            {/* Notification Bell - Only show when logged in */}
+            {!loading && user && <NotificationDropdown />}
+
             {loading ? (
               <div className="w-8 h-8 bg-slate-800 rounded-full animate-pulse" />
             ) : user ? (
@@ -87,12 +91,20 @@ export default function Navbar() {
                       </div>
                       <div className="p-1">
                         <Link
-                          href="/dashboard"
+                          href="/mypage"
                           className="flex items-center gap-2 px-3 py-2 text-slate-300 hover:bg-slate-700 rounded-lg transition text-sm"
                           onClick={() => setUserMenuOpen(false)}
                         >
                           <User className="w-4 h-4" />
-                          내 대시보드
+                          마이페이지
+                        </Link>
+                        <Link
+                          href="/mypage?tab=certificates"
+                          className="flex items-center gap-2 px-3 py-2 text-slate-300 hover:bg-slate-700 rounded-lg transition text-sm"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <Award className="w-4 h-4" />
+                          수료증/뱃지
                         </Link>
                         <button
                           onClick={() => {

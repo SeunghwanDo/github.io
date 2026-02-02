@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import { useAuth, useAssessment } from '@/hooks/useAuth'
 import { useCourseApplication } from '@/hooks/useCourseApplication'
+import { useCertificates, getBadgeColorClass } from '@/hooks/useCertificates'
 import {
   User,
   Mail,
@@ -22,6 +24,9 @@ import {
   Award,
   RefreshCw,
   Loader2,
+  FileText,
+  Download,
+  Share2,
 } from 'lucide-react'
 
 interface Assessment {
@@ -51,11 +56,17 @@ const courseNames: Record<string, string> = {
 
 export default function MyPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user, loading: authLoading } = useAuth()
   const { getAssessments } = useAssessment()
   const { getMyApplications } = useCourseApplication()
+  const { certificates, badges, loading: certsLoading } = useCertificates()
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'assessments' | 'applications'>('overview')
+  // Get initial tab from URL param
+  const tabParam = searchParams.get('tab')
+  const initialTab = tabParam === 'certificates' ? 'certificates' : 'overview'
+
+  const [activeTab, setActiveTab] = useState<'overview' | 'assessments' | 'applications' | 'certificates'>(initialTab as 'overview' | 'assessments' | 'applications' | 'certificates')
   const [assessments, setAssessments] = useState<Assessment[]>([])
   const [applications, setApplications] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
@@ -180,11 +191,12 @@ export default function MyPage() {
       {/* Tabs */}
       <section className="border-b border-slate-800 sticky top-16 z-40 bg-slate-900/95 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-8">
+          <div className="flex gap-4 sm:gap-8 overflow-x-auto">
             {[
               { id: 'overview', label: '개요', icon: BarChart3 },
               { id: 'assessments', label: '역량 진단', icon: Target },
               { id: 'applications', label: '신청 내역', icon: BookOpen },
+              { id: 'certificates', label: '수료증/뱃지', icon: Award },
             ].map((tab) => {
               const Icon = tab.icon
               return (
@@ -496,6 +508,109 @@ export default function MyPage() {
                     })}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Certificates Tab */}
+            {activeTab === 'certificates' && (
+              <div className="space-y-8">
+                {/* Certificates Section */}
+                <div>
+                  <h2 className="text-xl font-semibold text-white mb-6">수료증</h2>
+                  {certsLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
+                    </div>
+                  ) : certificates.length === 0 ? (
+                    <div className="text-center py-12 bg-slate-800/50 border border-slate-700/50 rounded-2xl">
+                      <FileText className="w-16 h-16 text-slate-700 mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold text-white mb-2">수료증이 없습니다</h3>
+                      <p className="text-slate-500 mb-6">교육 과정을 완료하면 수료증이 발급됩니다</p>
+                      <Link
+                        href="/skillbridge"
+                        className="inline-flex px-6 py-3 bg-violet-600 text-white rounded-xl hover:bg-violet-500 transition"
+                      >
+                        교육 과정 탐색
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {certificates.map((cert) => (
+                        <div
+                          key={cert.id}
+                          className="bg-gradient-to-br from-slate-800 to-slate-800/50 border border-slate-700/50 rounded-2xl p-6 relative overflow-hidden"
+                        >
+                          {/* Decorative badge */}
+                          <div className="absolute top-4 right-4 w-16 h-16 bg-violet-500/10 rounded-full flex items-center justify-center">
+                            <Award className="w-8 h-8 text-violet-400" />
+                          </div>
+
+                          <div className="relative">
+                            <p className="text-violet-400 text-sm font-medium mb-1">수료증</p>
+                            <h3 className="text-lg font-bold text-white mb-2 pr-16">{cert.course_title}</h3>
+                            <p className="text-slate-400 text-sm mb-4">{cert.provider_name}</p>
+
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-slate-500">발급번호</span>
+                                <span className="text-slate-300 font-mono">{cert.certificate_number}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-slate-500">발급일</span>
+                                <span className="text-slate-300">{formatDate(cert.issued_at)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-slate-500">상태</span>
+                                <span className={`${cert.status === 'active' ? 'text-emerald-400' : 'text-slate-400'}`}>
+                                  {cert.status === 'active' ? '유효' : cert.status === 'expired' ? '만료' : '취소됨'}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2 mt-4 pt-4 border-t border-slate-700">
+                              <button className="flex-1 py-2 bg-slate-700/50 text-slate-300 rounded-lg hover:bg-slate-700 transition flex items-center justify-center gap-2 text-sm">
+                                <Download className="w-4 h-4" />
+                                다운로드
+                              </button>
+                              <button className="py-2 px-4 bg-slate-700/50 text-slate-300 rounded-lg hover:bg-slate-700 transition">
+                                <Share2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Badges Section */}
+                <div>
+                  <h2 className="text-xl font-semibold text-white mb-6">획득한 뱃지</h2>
+                  {badges.length === 0 ? (
+                    <div className="text-center py-12 bg-slate-800/50 border border-slate-700/50 rounded-2xl">
+                      <Award className="w-16 h-16 text-slate-700 mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold text-white mb-2">뱃지가 없습니다</h3>
+                      <p className="text-slate-500">활동을 통해 뱃지를 획득해보세요</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                      {badges.map((badge) => {
+                        const colorClass = getBadgeColorClass(badge.color)
+                        return (
+                          <div
+                            key={badge.id}
+                            className={`${colorClass.bg} border ${colorClass.border} rounded-2xl p-4 text-center hover:scale-105 transition-transform cursor-pointer`}
+                          >
+                            <div className="text-4xl mb-2">{badge.icon}</div>
+                            <h4 className={`font-semibold ${colorClass.text} mb-1`}>{badge.name}</h4>
+                            <p className="text-slate-500 text-xs line-clamp-2">{badge.description}</p>
+                            <p className="text-slate-600 text-xs mt-2">{formatDate(badge.earned_at)}</p>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </>
