@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Zap, Menu, X, User, LogOut, ChevronDown, Award } from 'lucide-react'
+import { Zap, Menu, X, User, LogOut, ChevronDown, Award, Sparkles } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import NotificationDropdown from './NotificationDropdown'
 
@@ -106,6 +106,14 @@ export default function Navbar() {
                         >
                           <Award className="w-4 h-4" />
                           수료증/뱃지
+                        </Link>
+                        <Link
+                          href="/recommendations"
+                          className="flex items-center gap-2 px-3 py-2 text-slate-300 hover:bg-slate-700 rounded-lg transition text-sm"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          AI 추천
                         </Link>
                         <button
                           onClick={() => {

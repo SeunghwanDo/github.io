@@ -8,6 +8,7 @@ import Navbar from '@/components/Navbar'
 import { useAuth, useAssessment } from '@/hooks/useAuth'
 import { useCourseApplication } from '@/hooks/useCourseApplication'
 import { useCertificates, getBadgeColorClass } from '@/hooks/useCertificates'
+import { useCourseProgress, getProgressColor, getProgressBgColor, getStatusText } from '@/hooks/useCourseProgress'
 import {
   User,
   Mail,
@@ -61,12 +62,13 @@ export default function MyPage() {
   const { getAssessments } = useAssessment()
   const { getMyApplications } = useCourseApplication()
   const { certificates, badges, loading: certsLoading } = useCertificates()
+  const { allProgress, loading: progressLoading } = useCourseProgress()
 
   // Get initial tab from URL param
   const tabParam = searchParams.get('tab')
-  const initialTab = tabParam === 'certificates' ? 'certificates' : 'overview'
+  const initialTab = tabParam === 'certificates' ? 'certificates' : tabParam === 'progress' ? 'progress' : 'overview'
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'assessments' | 'applications' | 'certificates'>(initialTab as 'overview' | 'assessments' | 'applications' | 'certificates')
+  const [activeTab, setActiveTab] = useState<'overview' | 'assessments' | 'applications' | 'progress' | 'certificates'>(initialTab as 'overview' | 'assessments' | 'applications' | 'progress' | 'certificates')
   const [assessments, setAssessments] = useState<Assessment[]>([])
   const [applications, setApplications] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
@@ -194,6 +196,7 @@ export default function MyPage() {
           <div className="flex gap-4 sm:gap-8 overflow-x-auto">
             {[
               { id: 'overview', label: '개요', icon: BarChart3 },
+              { id: 'progress', label: '학습 현황', icon: TrendingUp },
               { id: 'assessments', label: '역량 진단', icon: Target },
               { id: 'applications', label: '신청 내역', icon: BookOpen },
               { id: 'certificates', label: '수료증/뱃지', icon: Award },
@@ -501,6 +504,114 @@ export default function MyPage() {
                             <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${statusInfo.bg}`}>
                               <StatusIcon className={`w-5 h-5 ${statusInfo.color}`} />
                               <span className={`font-medium ${statusInfo.color}`}>{statusInfo.text}</span>
+                            </div>
+                          </div>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Progress Tab */}
+            {activeTab === 'progress' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-white">학습 현황</h2>
+                  <Link
+                    href="/skillbridge"
+                    className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-500 transition flex items-center gap-2"
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    새 교육 찾기
+                  </Link>
+                </div>
+
+                {progressLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
+                  </div>
+                ) : allProgress.length === 0 ? (
+                  <div className="text-center py-20 bg-slate-800/50 border border-slate-700/50 rounded-2xl">
+                    <TrendingUp className="w-16 h-16 text-slate-700 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-white mb-2">수강 중인 과정이 없습니다</h3>
+                    <p className="text-slate-500 mb-6">교육과정을 신청하고 학습을 시작하세요</p>
+                    <Link
+                      href="/skillbridge"
+                      className="inline-flex px-6 py-3 bg-violet-600 text-white rounded-xl hover:bg-violet-500 transition"
+                    >
+                      교육 과정 탐색
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {allProgress.map((prog) => {
+                      const statusInfo = getStatusText(prog.enrollment_status)
+                      return (
+                        <Link
+                          key={prog.id}
+                          href={`/progress/${prog.course_id}`}
+                          className="block bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 hover:border-violet-500/30 transition"
+                        >
+                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <span className={`px-3 py-1 text-sm font-medium rounded-full ${statusInfo.color}`}>
+                                  {statusInfo.text}
+                                </span>
+                                <span className="text-slate-500 text-sm">
+                                  {prog.current_week}/{prog.total_weeks}주차
+                                </span>
+                              </div>
+                              <h3 className="text-lg font-semibold text-white mb-2">{prog.course_title}</h3>
+                              <div className="flex items-center gap-6 text-sm text-slate-400">
+                                <span>출석률: <span className={getProgressColor(prog.attendance_rate)}>{prog.attendance_rate}%</span></span>
+                                <span>과제: <span className={getProgressColor(prog.assignment_completion_rate)}>{prog.assignment_completion_rate}%</span></span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                              <div className="text-center">
+                                <div className={`text-2xl font-bold ${getProgressColor(prog.overall_progress)}`}>
+                                  {prog.overall_progress}%
+                                </div>
+                                <p className="text-slate-500 text-sm">전체 진행률</p>
+                              </div>
+                              <div className="w-24 h-24 relative">
+                                <svg className="w-full h-full transform -rotate-90">
+                                  <circle
+                                    cx="48"
+                                    cy="48"
+                                    r="40"
+                                    stroke="currentColor"
+                                    strokeWidth="8"
+                                    fill="none"
+                                    className="text-slate-700"
+                                  />
+                                  <circle
+                                    cx="48"
+                                    cy="48"
+                                    r="40"
+                                    stroke="currentColor"
+                                    strokeWidth="8"
+                                    fill="none"
+                                    strokeDasharray={`${(prog.overall_progress / 100) * 251.2} 251.2`}
+                                    className={getProgressBgColor(prog.overall_progress).replace('bg-', 'text-')}
+                                    strokeLinecap="round"
+                                  />
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Progress bar */}
+                          <div className="mt-4">
+                            <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${getProgressBgColor(prog.overall_progress)}`}
+                                style={{ width: `${prog.overall_progress}%` }}
+                              />
                             </div>
                           </div>
                         </Link>
