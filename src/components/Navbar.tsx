@@ -15,6 +15,7 @@ export default function Navbar() {
 
   const navLinks = [
     { href: '/skillbridge', label: 'SkillBridge' },
+    { href: '/jobs', label: '채용공고' },
     { href: '/dashboard', label: '대시보드' },
   ]
 

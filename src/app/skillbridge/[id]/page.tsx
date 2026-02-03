@@ -30,7 +30,10 @@ import {
   Loader2,
   Send,
   MessageSquare,
+  Briefcase,
+  ArrowRight,
 } from 'lucide-react'
+import { jobPostings, skillToCourseMapping } from '@/data/jobs'
 
 // Mock Course Data
 const courseData = {
@@ -660,8 +663,65 @@ export default function CourseDetailPage() {
             )}
           </div>
 
-          {/* Sidebar - Related Courses */}
-          <div className="lg:col-span-1">
+          {/* Sidebar - Related Courses & Jobs */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Related Jobs */}
+            <div className="bg-gradient-to-br from-violet-600/10 to-fuchsia-600/10 border border-violet-500/30 rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Briefcase className="w-5 h-5 text-violet-400" />
+                <h3 className="text-lg font-semibold text-white">관련 채용공고</h3>
+              </div>
+              <p className="text-slate-400 text-sm mb-4">
+                이 교육을 수료하면 지원 가능한 채용공고입니다
+              </p>
+              <div className="space-y-3">
+                {Object.values(jobPostings)
+                  .filter((job) => {
+                    // Find jobs that require skills matching this course
+                    const allSkills = [...job.required_skills, ...job.preferred_skills]
+                    return allSkills.some((skill) => {
+                      const courseIds = skillToCourseMapping[skill] || []
+                      // Check partial matches too
+                      const partialMatch = Object.entries(skillToCourseMapping).some(
+                        ([key, ids]) =>
+                          (skill.includes(key) || key.includes(skill)) && ids.includes(courseId)
+                      )
+                      return courseIds.includes(courseId) || partialMatch
+                    })
+                  })
+                  .slice(0, 3)
+                  .map((job) => (
+                    <Link
+                      key={job.id}
+                      href={`/jobs/${job.id}`}
+                      className="block p-3 bg-slate-800/50 rounded-xl hover:bg-slate-800 transition group"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-violet-400 text-xs font-medium">{job.company_name}</p>
+                          <p className="text-white font-medium group-hover:text-violet-300 transition line-clamp-1">
+                            {job.title}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+                            <span>{job.location}</span>
+                            <span>·</span>
+                            <span>{job.employment_type}</span>
+                          </div>
+                        </div>
+                        <ArrowRight className="w-5 h-5 text-slate-600 group-hover:text-violet-400 transition flex-shrink-0" />
+                      </div>
+                    </Link>
+                  ))}
+              </div>
+              <Link
+                href="/jobs"
+                className="block text-center text-sm text-violet-400 hover:text-violet-300 mt-4"
+              >
+                더 많은 채용공고 보기
+              </Link>
+            </div>
+
+            {/* Related Courses */}
             <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
               <h3 className="text-lg font-semibold text-white mb-4">연관 교육 과정</h3>
               <div className="space-y-4">
