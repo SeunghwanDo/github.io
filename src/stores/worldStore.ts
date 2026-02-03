@@ -27,6 +27,17 @@ export interface Room {
   placedItems: PlacedItem[]
 }
 
+// 아바타 오라/효과 타입
+export interface AvatarAura {
+  id: string
+  name: string
+  description: string
+  effect: 'healthy' | 'muscular' | 'expert' | 'legend' | 'regrowth'
+  color: string
+  source: string
+  unlockedAt: Date
+}
+
 export interface WorldState {
   inventory: InventoryItem[]
   rooms: Room[]
@@ -34,6 +45,10 @@ export interface WorldState {
   coins: number
   syncedAt: Date | null
   hasSyncedSkillBridge: boolean
+  // 아바타 효과
+  avatarAuras: AvatarAura[]
+  fitnessGrade: 1 | 2 | 3 | null
+  isVerifiedExpert: boolean
 }
 
 // 기본 인벤토리 아이템
@@ -81,6 +96,68 @@ const defaultRooms: Room[] = [
     ],
   },
 ]
+
+// 국민체력100 인증 배지/아이템 정의
+export const fitnessBadges: Record<number, Omit<InventoryItem, 'obtainedAt'>> = {
+  1: {
+    id: 'fitness_grade_1',
+    name: '국민체력100 1등급',
+    description: '최고 수준의 체력을 인증받았습니다. 아바타에 "건강한 빛" 오라가 적용됩니다.',
+    icon: '🥇',
+    category: 'trophy',
+    rarity: 'legendary',
+    source: 'fitness100',
+    metadata: {
+      grade: 1,
+      auraEffect: 'muscular',
+      auraColor: '#FFD700'
+    }
+  },
+  2: {
+    id: 'fitness_grade_2',
+    name: '국민체력100 2등급',
+    description: '우수한 체력을 인증받았습니다. 아바타에 "활력" 오라가 적용됩니다.',
+    icon: '🥈',
+    category: 'trophy',
+    rarity: 'epic',
+    source: 'fitness100',
+    metadata: {
+      grade: 2,
+      auraEffect: 'healthy',
+      auraColor: '#C0C0C0'
+    }
+  },
+  3: {
+    id: 'fitness_grade_3',
+    name: '국민체력100 3등급',
+    description: '양호한 체력을 인증받았습니다.',
+    icon: '🥉',
+    category: 'trophy',
+    rarity: 'rare',
+    source: 'fitness100',
+    metadata: {
+      grade: 3,
+      auraEffect: 'healthy',
+      auraColor: '#CD7F32'
+    }
+  }
+}
+
+// 검증된 전문가 배지
+export const expertBadge: Omit<InventoryItem, 'obtainedAt'> = {
+  id: 'verified_expert',
+  name: '검증된 전문가',
+  description: '고용24를 통해 5년 이상의 경력이 공식 인증되었습니다.',
+  icon: '✅',
+  category: 'trophy',
+  rarity: 'epic',
+  source: 'employment24',
+  metadata: {
+    verified: true,
+    auraEffect: 'expert',
+    auraColor: '#4F46E5'
+  }
+}
 
 // SkillBridge 자격증 트로피 아이템 정의
 export const skillBridgeTrophies: Record<string, Omit<InventoryItem, 'obtainedAt'>> = {
@@ -156,6 +233,9 @@ const initialState: WorldState = {
   coins: 1000,
   syncedAt: null,
   hasSyncedSkillBridge: false,
+  avatarAuras: [],
+  fitnessGrade: null,
+  isVerifiedExpert: false,
 }
 
 // Context 타입
@@ -173,6 +253,11 @@ interface WorldContextType {
   setCurrentRoom: (roomId: string) => void
   // SkillBridge 연동
   syncExternalData: () => Promise<void>
+  // 국민체력100 / 고용24 연동
+  syncFitnessGrade: (grade: 1 | 2 | 3) => void
+  syncExpertVerification: () => void
+  // 아바타 오라
+  getActiveAuras: () => AvatarAura[]
   // 기타
   addCoins: (amount: number) => void
   spendCoins: (amount: number) => boolean
@@ -332,6 +417,101 @@ export function WorldProvider({ children }: { children: ReactNode }) {
     }
   }, [state.hasSyncedSkillBridge, state.inventory])
 
+  // 국민체력100 등급 동기화
+  const syncFitnessGrade = useCallback((grade: 1 | 2 | 3) => {
+    const badgeData = fitnessBadges[grade]
+    if (!badgeData) return
+
+    const newBadge: InventoryItem = {
+      ...badgeData,
+      obtainedAt: new Date()
+    }
+
+    const newAura: AvatarAura = {
+      id: `fitness_aura_${grade}`,
+      name: grade === 1 ? '건강한 빛' : grade === 2 ? '활력의 빛' : '건강 인증',
+      description: `국민체력100 ${grade}등급 인증으로 획득한 아바타 효과입니다.`,
+      effect: grade === 1 ? 'muscular' : 'healthy',
+      color: badgeData.metadata?.auraColor as string || '#FFD700',
+      source: 'fitness100',
+      unlockedAt: new Date()
+    }
+
+    setState(prev => {
+      // 이미 있으면 스킵
+      if (prev.fitnessGrade === grade) return prev
+
+      // 기존 체력 배지 제거 후 새로 추가
+      const filteredInventory = prev.inventory.filter(item => !item.id.startsWith('fitness_grade_'))
+      const filteredAuras = prev.avatarAuras.filter(aura => !aura.id.startsWith('fitness_aura_'))
+
+      return {
+        ...prev,
+        inventory: [...filteredInventory, newBadge],
+        avatarAuras: [...filteredAuras, newAura],
+        fitnessGrade: grade
+      }
+    })
+
+    // 알림
+    alert(`🎉 BizWorld 연동 완료!\n\n국민체력100 ${grade}등급 배지가 인벤토리에 추가되었습니다.\n아바타에 "${grade === 1 ? '건강한 빛' : '활력의 빛'}" 오라가 적용됩니다!`)
+  }, [])
+
+  // 검증된 전문가 동기화
+  const syncExpertVerification = useCallback(() => {
+    const newBadge: InventoryItem = {
+      ...expertBadge,
+      obtainedAt: new Date()
+    }
+
+    const newAura: AvatarAura = {
+      id: 'expert_aura',
+      name: '전문가의 기운',
+      description: '고용24를 통해 경력이 검증된 전문가에게 부여되는 오라입니다.',
+      effect: 'expert',
+      color: '#4F46E5',
+      source: 'employment24',
+      unlockedAt: new Date()
+    }
+
+    setState(prev => {
+      if (prev.isVerifiedExpert) return prev
+
+      return {
+        ...prev,
+        inventory: [...prev.inventory, newBadge],
+        avatarAuras: [...prev.avatarAuras, newAura],
+        isVerifiedExpert: true
+      }
+    })
+
+    alert(`🎉 BizWorld 연동 완료!\n\n"검증된 전문가" 배지가 인벤토리에 추가되었습니다.\n아바타에 "전문가의 기운" 오라가 적용됩니다!`)
+  }, [])
+
+  // 활성화된 오라 목록
+  const getActiveAuras = useCallback(() => {
+    return state.avatarAuras
+  }, [state.avatarAuras])
+
+  // SkillBridge 이벤트 리스너 (체력 인증 동기화)
+  useEffect(() => {
+    const handleFitnessVerified = (event: CustomEvent<{ grade: 1 | 2 | 3 }>) => {
+      syncFitnessGrade(event.detail.grade)
+    }
+
+    const handleExpertVerified = () => {
+      syncExpertVerification()
+    }
+
+    window.addEventListener('skillbridge-fitness-verified', handleFitnessVerified as EventListener)
+    window.addEventListener('skillbridge-expert-verified', handleExpertVerified)
+
+    return () => {
+      window.removeEventListener('skillbridge-fitness-verified', handleFitnessVerified as EventListener)
+      window.removeEventListener('skillbridge-expert-verified', handleExpertVerified)
+    }
+  }, [syncFitnessGrade, syncExpertVerification])
+
   // 코인 추가
   const addCoins = useCallback((amount: number) => {
     setState(prev => ({ ...prev, coins: prev.coins + amount }))
@@ -355,6 +535,9 @@ export function WorldProvider({ children }: { children: ReactNode }) {
     removeItemFromRoom,
     setCurrentRoom,
     syncExternalData,
+    syncFitnessGrade,
+    syncExpertVerification,
+    getActiveAuras,
     addCoins,
     spendCoins,
   }
