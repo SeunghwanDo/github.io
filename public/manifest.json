@@ -1,0 +1,101 @@
+{
+  "name": "SkillBridge - 제조업 교육 플랫폼",
+  "short_name": "SkillBridge",
+  "description": "제조업 맞춤형 교육 매칭 및 학습 관리 플랫폼",
+  "start_url": "/skillbridge/my-learning",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "lang": "ko-KR",
+  "shortcuts": [
+    {
+      "name": "내 학습",
+      "short_name": "학습",
+      "description": "내 학습 현황 보기",
+      "url": "/skillbridge/my-learning",
+      "icons": [{ "src": "/icons/learning.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "스킬 맵",
+      "short_name": "스킬",
+      "description": "내 스킬 현황 보기",
+      "url": "/skillbridge/skill-map",
+      "icons": [{ "src": "/icons/skill.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "과정 탐색",
+      "short_name": "과정",
+      "description": "교육 과정 둘러보기",
+      "url": "/skillbridge",
+      "icons": [{ "src": "/icons/courses.png", "sizes": "96x96" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "학습 대시보드"
+    },
+    {
+      "src": "/screenshots/mobile-home.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "모바일 홈 화면"
+    }
+  ]
+}
