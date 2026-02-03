@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Zap, Menu, X, User, LogOut, ChevronDown, Award, Sparkles, Trophy } from 'lucide-react'
+import { Zap, Menu, X, User, LogOut, ChevronDown, Award, Sparkles, Trophy, Users, Building2 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import NotificationDropdown from './NotificationDropdown'
 
@@ -122,6 +122,22 @@ export default function Navbar() {
                         >
                           <Trophy className="w-4 h-4" />
                           학습 레벨
+                        </Link>
+                        <Link
+                          href="/community"
+                          className="flex items-center gap-2 px-3 py-2 text-slate-300 hover:bg-slate-700 rounded-lg transition text-sm"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <Users className="w-4 h-4" />
+                          커뮤니티
+                        </Link>
+                        <Link
+                          href="/enterprise"
+                          className="flex items-center gap-2 px-3 py-2 text-slate-300 hover:bg-slate-700 rounded-lg transition text-sm"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <Building2 className="w-4 h-4" />
+                          인재 검색
                         </Link>
                         <button
                           onClick={() => {
